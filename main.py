@@ -7,24 +7,24 @@ from datetime import datetime
 from VideoPath import DrivingAssistanceApp
 
 from TaskConditions import TaskConditions, Logger
-from ObjectDetector.yoloDetector import YoloDetector
-from ObjectDetector.utils import ObjectModelType,  CollisionType
-from ObjectDetector.distanceMeasure import SingleCamDistanceMeasure
+from ObjectDetection.yoloDetector import YoloDetector
+from ObjectDetection.utils import ObjectModelType,  CollisionType
+from ObjectDetection.distanceMeasure import SingleCamDistanceMeasure
 
-from TrafficLaneDetector.ultrafastLaneDetector.ultrafastLaneDetector import UltrafastLaneDetector
-from TrafficLaneDetector.ultrafastLaneDetector.ultrafastLaneDetectorV2 import UltrafastLaneDetectorV2
-from TrafficLaneDetector.ultrafastLaneDetector.perspectiveTransformation import PerspectiveTransformation
-from TrafficLaneDetector.ultrafastLaneDetector.utils import LaneModelType, OffsetType, CurvatureType
+from LaneDetection.ultrafastLaneDetector.ultrafastLaneDetector import UltrafastLaneDetector
+from LaneDetection.ultrafastLaneDetector.ultrafastLaneDetectorV2 import UltrafastLaneDetectorV2
+from LaneDetection.ultrafastLaneDetector.perspectiveTransformation import PerspectiveTransformation
+from LaneDetection.ultrafastLaneDetector.utils import LaneModelType, OffsetType, CurvatureType
 LOGGER = Logger(None, logging.INFO, logging.INFO )
 
 lane_config = {
-	"model_path": "./TrafficLaneDetector/models/culane_res34.trt",
+	"model_path": "./LaneDetection/models/culane_res34.trt",
 	"model_type" : LaneModelType.UFLDV2_CULANE
 }
 object_config = {
-	"model_path": './ObjectDetector/models/Detection.trt',
+	"model_path": './ObjectDetection/models/Detection.trt',
 	"model_type" : ObjectModelType.YOLOV8,
-	"classes_path" : './ObjectDetector/models/coco_label.txt',
+	"classes_path" : './ObjectDetection/models/coco_label.txt',
 	"box_score" : 0.4,
 	"box_nms_iou" : 0.45
 }
@@ -236,7 +236,7 @@ if __name__ == "__main__":
 	# object detection model
 	LOGGER.info("YoloDetector Model Type : {}".format(object_config["model_type"].name))
 	YoloDetector.set_defaults(object_config)
-	objectDetector = YoloDetector(logger=LOGGER)
+	ObjectDetection = YoloDetector(logger=LOGGER)
 	distanceDetector = SingleCamDistanceMeasure()
 
 	# display panel
@@ -251,14 +251,14 @@ if __name__ == "__main__":
 
 			#========================== Detect Model =========================
 			obect_time = time.time()
-			objectDetector.DetectFrame(frame)
+			ObjectDetection.DetectFrame(frame)
 			obect_infer_time = round(time.time() - obect_time, 2)
 			lane_time = time.time()
 			laneDetector.DetectFrame(frame)
 			lane_infer_time = round(time.time() - lane_time, 4)
 
 			#========================= Analyze Status ========================
-			distanceDetector.calcDistance(objectDetector.object_info)
+			distanceDetector.calcDistance(ObjectDetection.object_info)
 			vehicle_distance = distanceDetector.calcCollisionPoint(laneDetector.draw_area_points)
 
 			analyzeMsg.UpdateCollisionStatus(vehicle_distance, laneDetector.draw_area)
@@ -279,7 +279,7 @@ if __name__ == "__main__":
 			if (LOGGER.clevel == logging.DEBUG) : transformView.DrawTransformFrontalViewArea(frame_show)
 			laneDetector.DrawDetectedOnFrame(frame_show, analyzeMsg.offset_msg)
 			frame_show = laneDetector.DrawAreaOnFrame(frame_show, displayPanel.CollisionDict[analyzeMsg.collision_msg])
-			objectDetector.DrawDetectedOnFrame(frame_show)
+			ObjectDetection.DrawDetectedOnFrame(frame_show)
 			distanceDetector.DrawDetectedOnFrame(frame_show)
 
 			frame_show = displayPanel.DisplaySignsPanel(frame_show, analyzeMsg.offset_msg, analyzeMsg.curvature_msg)	
